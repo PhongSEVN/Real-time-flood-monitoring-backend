@@ -1,35 +1,48 @@
 package com.floodguard.backend.response;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 /**
- * ApiResponse class
+ * Generic API Response wrapper class
  *
- * @author INIT
+ * @param <T> Type of data being returned
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE)
-public class ApiResponse {
-    @JsonProperty("status")
-    private Integer status;
+public class ApiResponse<T> {
 
-    @JsonProperty("message")
+    private boolean success;
     private String message;
+    private T data;
+    private LocalDateTime timestamp;
 
-    @JsonProperty("result")
-    private Object result;
-
-    public ApiResponse(Integer status, String message) {
-        this.status = status;
-        this.message = message;
+    public static <T> ApiResponse<T> success(String message, T data) {
+        return ApiResponse.<T>builder()
+                .success(true)
+                .message(message)
+                .data(data)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
-    public ApiResponse(Integer status, Object result) {
-        this.status = status;
-        this.result = result;
+    public static <T> ApiResponse<T> success(T data) {
+        return success("Success", data);
+    }
+
+    public static <T> ApiResponse<T> error(String message) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 }
