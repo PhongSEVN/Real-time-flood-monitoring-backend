@@ -17,11 +17,11 @@ echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}   Flood Monitoring Backend Deploy     ${NC}"
 echo -e "${BLUE}========================================${NC}"
 
-# Pull Code
+# 1. Pull Code
 echo -e "\n${YELLOW}[1/4] Pulling latest code from Git...${NC}"
 git pull origin main
 
-# Build
+# 2. Build
 echo -e "\n${YELLOW}[2/4] Building Java application...${NC}"
 if command -v mvn &> /dev/null; then
     mvn clean package -DskipTests
@@ -32,20 +32,20 @@ else
     ./mvnw clean package -DskipTests
 fi
 
-# Stop existing application
+# 3. Stop existing application
 echo -e "\n${YELLOW}[3/4] Stopping existing application...${NC}"
-# Find PID of the running jar
-PID=$(pgrep -f "backend-0.0.1-SNAPSHOT.jar")
+# Use || true to prevent script from exiting if pgrep finds nothing
+PID=$(pgrep -f "backend-0.0.1-SNAPSHOT.jar" || true)
 
 if [ -n "$PID" ]; then
     echo -e "Killing existing process with PID: $PID"
-    kill -9 $PID
+    kill -9 $PID || true
     sleep 2
 else
     echo "No running application found."
 fi
 
-# Start application
+# 4. Start application
 echo -e "\n${YELLOW}[4/4] Starting application...${NC}"
 nohup java -jar target/backend-0.0.1-SNAPSHOT.jar > backend.log 2>&1 &
 NEW_PID=$!
