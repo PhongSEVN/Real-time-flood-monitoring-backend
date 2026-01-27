@@ -2,15 +2,13 @@ package com.floodguard.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 
 @Data
 @Builder
@@ -21,31 +19,42 @@ import java.util.UUID;
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
+    private Long userId;
 
-    @Column(name = "full_name")
+    @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
-    @Column(length = 20)
-    private String phone;
-
-    @Column(unique = true)
+    @Column(length = 255)
     private String email;
 
-    @Column(length = 50)
-    private String role;
+    @Column(name = "phone_number", length = 15)
+    private String phoneNumber;
 
+    @Column(length = 20)
+    private String role; // RESIDENT | GROUP_LEADER | WARD_OFFICIAL
+
+    @Column(name = "priority_level")
+    @Builder.Default
+    private Integer priorityLevel = 0;
+
+    @Column(name = "address_group", unique = true, length = 100)
+    private String addressGroup;
+
+    // Password field for authentication (thêm vào cho security)
     @Column(name = "password_hash")
     private String passwordHash;
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    // Relationships
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @Builder.Default
+    private List<Report> reports = new ArrayList<>();
 
+    // UserDetails implementation
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + (role != null ? role.toUpperCase() : "RESIDENT")));
     }
 
     @Override

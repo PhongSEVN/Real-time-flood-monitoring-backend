@@ -1,37 +1,54 @@
 package com.floodguard.backend.controller;
 
-import com.floodguard.backend.config.JwtUtil;
-import com.floodguard.backend.dto.LoginRequest;
-import com.floodguard.backend.dto.LoginResponse;
+import com.floodguard.backend.dto.AuthDTO;
+import com.floodguard.backend.response.ApiResponse;
+import com.floodguard.backend.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-    private final UserDetailsService userDetailsService;
-    private final JwtUtil jwtUtil;
+    private final AuthService authService;
 
+    /**
+     * Đăng nhập bằng Google ID Token
+     * POST /api/auth/google
+     */
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse<AuthDTO.AuthResponse>> loginWithGoogle(
+            @Valid @RequestBody AuthDTO.GoogleLoginRequest request) {
+        AuthDTO.AuthResponse response = authService.loginWithGoogle(request);
+        String message = response.getUser().isNewUser()
+                ? "Account created and logged in successfully"
+                : "Logged in successfully";
+        return ResponseEntity.ok(ApiResponse.success(message, response));
+    }
+
+    /**
+     * Đăng nhập bằng email/password
+     * POST /api/auth/login
+     */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
-        );
+    public ResponseEntity<ApiResponse<AuthDTO.AuthResponse>> login(
+            @Valid @RequestBody AuthDTO.LoginRequest request) {
+        AuthDTO.AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(ApiResponse.success("Logged in successfully", response));
+    }
 
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUsername());
-        final String jwt = jwtUtil.generateToken(userDetails);
-
-        return ResponseEntity.ok(new LoginResponse(jwt));
+    /**
+     * Đăng ký tài khoản mới
+     * POST /api/auth/register
+     */
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<AuthDTO.AuthResponse>> register(
+            @Valid @RequestBody AuthDTO.RegisterRequest request) {
+        AuthDTO.AuthResponse response = authService.register(request);
+        return ResponseEntity.ok(ApiResponse.success("Account registered successfully", response));
     }
 }

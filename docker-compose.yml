@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with PostGIS
+  flood-db:
+    image: postgis/postgis:15-3.3
+    container_name: flood-db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=flood_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - flood_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PgAdmin for database management
+  flood-pgadmin:
+    image: dpage/pgadmin4
+    container_name: flood-pgadmin
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=nguyenvanphong2k04@gmail.com
+      - PGADMIN_DEFAULT_PASSWORD=123456
+    ports:
+      - "5050:80"
+    depends_on:
+      - flood-db
+
+  # GeoServer for GIS
+  flood-geoserver:
+    image: kartoza/geoserver:2.24.1
+    container_name: flood-geoserver
+    restart: always
+    environment:
+      - GEOSERVER_ADMIN_USER=admin
+      - GEOSERVER_ADMIN_PASSWORD=geoserver
+    ports:
+      - "8081:8080"
+    volumes:
+      - flood_geoserver_data:/opt/geoserver/data_dir
+    depends_on:
+      - flood-db
+
+volumes:
+  flood_db_data:
+  flood_geoserver_data:
