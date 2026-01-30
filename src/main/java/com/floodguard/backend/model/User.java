@@ -2,11 +2,13 @@ package com.floodguard.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -23,38 +25,38 @@ public class User implements UserDetails {
     @Column(name = "user_id")
     private Long userId;
 
+    @Column(length = 50, unique = true)
+    private String username;
+
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
+
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
-
-    @Column(length = 255)
-    private String email;
 
     @Column(name = "phone_number", length = 15)
     private String phoneNumber;
 
-    @Column(length = 20)
-    private String role; // RESIDENT | GROUP_LEADER | WARD_OFFICIAL
-
-    @Column(name = "priority_level")
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "user_role")
     @Builder.Default
-    private Integer priorityLevel = 0;
+    private UserRole role = UserRole.RESIDENT;
 
-    @Column(name = "address_group", unique = true, length = 100)
-    private String addressGroup;
+    @Column(name = "management_area_code", length = 50)
+    private String managementAreaCode;
 
-    // Password field for authentication (thêm vào cho security)
-    @Column(name = "password_hash")
-    private String passwordHash;
+    @CreationTimestamp
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    // Relationships
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    @Builder.Default
-    private List<Report> reports = new ArrayList<>();
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     // UserDetails implementation
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + (role != null ? role.toUpperCase() : "RESIDENT")));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override
@@ -64,7 +66,7 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
-        return email;
+        return username;
     }
 
     @Override

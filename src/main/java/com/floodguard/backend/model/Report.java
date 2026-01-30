@@ -2,7 +2,8 @@ package com.floodguard.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.creationtimestamp;
+import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDateTime;
 
@@ -20,16 +21,14 @@ public class Report {
     private Long reportId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "location_id")
-    private Location location;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @CreationTimestamp
-    @Column(name = "report_time")
-    private LocalDateTime reportTime;
+    @Column(name = "guest_name", length = 100)
+    private String guestName;
+
+    @Column(name = "guest_phone", length = 15)
+    private String guestPhone;
 
     @Column(name = "event_type", length = 50)
     private String eventType;
@@ -37,13 +36,32 @@ public class Report {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "damage_level")
+    @Builder.Default
+    private Integer damageLevel = 0;
+
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
-    @Column(name = "damage_level")
-    private Integer damageLevel;
-
-    @Column(name = "verify_status", length = 20)
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "report_status")
     @Builder.Default
-    private String verifyStatus = "PENDING"; // PENDING | VERIFIED | PROCESSED
+    private ReportStatus status = ReportStatus.UNVERIFIED;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "verified_by")
+    private User verifiedBy;
+
+    @Column(name = "verified_at")
+    private LocalDateTime verifiedAt;
+
+    @Column(name = "admin_note", columnDefinition = "TEXT")
+    private String adminNote;
+
+    @org.hibernate.annotations.CreationTimestamp
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(columnDefinition = "geometry(Point, 4326)")
+    private Point geom;
 }
