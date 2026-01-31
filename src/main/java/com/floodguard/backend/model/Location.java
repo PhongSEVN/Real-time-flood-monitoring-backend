@@ -4,9 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Point;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Data
 @Builder
 @NoArgsConstructor
@@ -32,9 +29,4 @@ public class Location {
     @Column(name = "base_elevation")
     @Builder.Default
     private Double baseElevation = 0.0;
-
-    // Relationships
-    @OneToMany(mappedBy = "location", cascade = CascadeType.ALL)
-    @Builder.Default
-    private List<Report> reports = new ArrayList<>();
 }

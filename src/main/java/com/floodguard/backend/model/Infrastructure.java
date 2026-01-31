@@ -26,7 +26,8 @@ public class Infrastructure {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(columnDefinition = "infra_type", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private InfraType type;
 
     @Column(length = 50)

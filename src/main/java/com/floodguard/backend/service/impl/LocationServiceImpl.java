@@ -136,7 +136,7 @@ public class LocationServiceImpl implements LocationService {
                 .latitude(latitude)
                 .locationType(location.getLocationType())
                 .baseElevation(location.getBaseElevation())
-                .reportsCount(location.getReports() != null ? location.getReports().size() : 0)
+                .reportsCount(0)
                 .build();
     }
 }

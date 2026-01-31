@@ -3,6 +3,7 @@ package com.floodguard.backend.service.impl;
 import com.floodguard.backend.dto.AuthDTO;
 import com.floodguard.backend.exception.CustomException;
 import com.floodguard.backend.model.User;
+import com.floodguard.backend.model.UserRole;
 import com.floodguard.backend.repository.UserRepository;
 import com.floodguard.backend.config.JwtUtil;
 import com.floodguard.backend.service.AuthService;
@@ -56,17 +57,16 @@ public class AuthServiceImpl implements AuthService {
             String fullName = (String) payload.get("name");
 
             // Kiểm tra user đã tồn tại chưa
-            Optional<User> existingUser = userRepository.findByEmail(email);
+            Optional<User> existingUser = userRepository.findByUsername(email);
             boolean isNewUser = existingUser.isEmpty();
 
             User user;
             if (isNewUser) {
                 // Tạo user mới
                 user = User.builder()
-                        .email(email)
+                        .username(email)
                         .fullName(fullName != null ? fullName : email.split("@")[0])
-                        .role("RESIDENT") // Default role
-                        .priorityLevel(3) // Default priority
+                        .role(UserRole.RESIDENT)
                         .build();
                 user = userRepository.save(user);
                 log.info("Created new user from Google login: {}", email);
@@ -78,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
             // Tạo JWT token
             Map<String, Object> claims = new HashMap<>();
             claims.put("userId", user.getUserId());
-            claims.put("role", user.getRole());
+            claims.put("role", user.getRole().name());
             String token = jwtUtil.generateToken(email, claims);
 
             return AuthDTO.AuthResponse.builder()
@@ -98,19 +98,20 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthDTO.AuthResponse login(AuthDTO.LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new CustomException("Invalid email or password", HttpStatus.UNAUTHORIZED));
+        // Tìm user theo số điện thoại
+        User user = userRepository.findByPhoneNumber(request.getPhoneNumber())
+                .orElseThrow(() -> new CustomException("Invalid phone number or password", HttpStatus.UNAUTHORIZED));
 
         if (user.getPasswordHash() == null ||
                 !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new CustomException("Invalid email or password", HttpStatus.UNAUTHORIZED);
+            throw new CustomException("Invalid phone number or password", HttpStatus.UNAUTHORIZED);
         }
 
-        // Tạo JWT token
+        // Tạo JWT token - dùng phoneNumber làm subject
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getUserId());
-        claims.put("role", user.getRole());
-        String token = jwtUtil.generateToken(user.getEmail(), claims);
+        claims.put("role", user.getRole().name());
+        String token = jwtUtil.generateToken(user.getPhoneNumber(), claims);
 
         return AuthDTO.AuthResponse.builder()
                 .accessToken(token)
@@ -122,30 +123,45 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest request) {
+        // Kiểm tra số điện thoại đã tồn tại chưa
+        if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new CustomException("Phone number already registered", HttpStatus.BAD_REQUEST);
+        }
+
         // Kiểm tra email đã tồn tại chưa
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new CustomException("Email already registered", HttpStatus.BAD_REQUEST);
         }
 
-        // Tạo user mới
+        // Parse role from request or default to RESIDENT
+        UserRole userRole = UserRole.RESIDENT;
+        if (request.getRole() != null) {
+            try {
+                userRole = UserRole.valueOf(request.getRole().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                userRole = UserRole.RESIDENT;
+            }
+        }
+
+        // Tạo user mới - dùng phoneNumber làm username
         User user = User.builder()
                 .fullName(request.getFullName())
                 .email(request.getEmail())
+                .username(request.getPhoneNumber()) // Dùng SĐT làm username để đảm bảo unique
                 .phoneNumber(request.getPhoneNumber())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .role(request.getRole() != null ? request.getRole() : "RESIDENT")
-                .priorityLevel(3)
-                .addressGroup(request.getAddressGroup())
+                .role(userRole)
+                .managementAreaCode(request.getAddressGroup())
                 .build();
 
         user = userRepository.save(user);
-        log.info("New user registered: {}", request.getEmail());
+        log.info("New user registered: {}", request.getPhoneNumber());
 
         // Tạo JWT token
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getUserId());
-        claims.put("role", user.getRole());
-        String token = jwtUtil.generateToken(user.getEmail(), claims);
+        claims.put("role", user.getRole().name());
+        String token = jwtUtil.generateToken(user.getPhoneNumber(), claims);
 
         return AuthDTO.AuthResponse.builder()
                 .accessToken(token)
@@ -161,9 +177,9 @@ public class AuthServiceImpl implements AuthService {
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
-                .role(user.getRole())
-                .priorityLevel(user.getPriorityLevel())
-                .addressGroup(user.getAddressGroup())
+                .role(user.getRole().name())
+                .priorityLevel(0)
+                .addressGroup(user.getManagementAreaCode())
                 .isNewUser(isNewUser)
                 .build();
     }

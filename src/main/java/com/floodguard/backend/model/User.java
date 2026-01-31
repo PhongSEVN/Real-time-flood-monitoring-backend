@@ -3,7 +3,9 @@ package com.floodguard.backend.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -39,6 +41,7 @@ public class User implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "user_role")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Builder.Default
     private UserRole role = UserRole.RESIDENT;
 
@@ -48,6 +51,9 @@ public class User implements UserDetails {
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "email")
+    private String email;
 
     @UpdateTimestamp
     @Column(name = "updated_at")

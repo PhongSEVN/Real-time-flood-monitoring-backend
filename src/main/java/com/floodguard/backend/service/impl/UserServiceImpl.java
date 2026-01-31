@@ -18,20 +18,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO.Response getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
 
         return UserDTO.Response.builder()
                 .userId(user.getUserId())
                 .fullName(user.getFullName())
-                .email(user.getEmail())
+                .email(user.getUsername())
                 .phoneNumber(user.getPhoneNumber())
-                .role(user.getRole())
-                .priorityLevel(user.getPriorityLevel())
-                .addressGroup(user.getAddressGroup())
-                .reportsCount(user.getReports() != null ? user.getReports().size() : 0)
+                .role(user.getRole().name())
+                .priorityLevel(0)
+                .addressGroup(user.getManagementAreaCode())
+                .reportsCount(0)
                 .build();
     }
 }

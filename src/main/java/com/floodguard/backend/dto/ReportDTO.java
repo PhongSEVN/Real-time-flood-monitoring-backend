@@ -17,6 +17,10 @@ public class ReportDTO {
 
         private Long userId;
 
+        // Guest info for non-registered users
+        private String guestName;
+        private String guestPhone;
+
         // Hoặc tạo location mới
         private Double longitude;
         private Double latitude;
@@ -29,8 +33,8 @@ public class ReportDTO {
 
         private String imageUrl;
 
-        @Min(value = 1, message = "Damage level must be between 1 and 5")
-        @Max(value = 5, message = "Damage level must be between 1 and 5")
+        @Min(value = 0, message = "Damage level must be between 0 and 5")
+        @Max(value = 5, message = "Damage level must be between 0 and 5")
         private Integer damageLevel;
     }
 

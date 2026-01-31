@@ -2,7 +2,9 @@ package com.floodguard.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.creationtimestamp;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDateTime;
@@ -45,6 +47,7 @@ public class Report {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "report_status")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Builder.Default
     private ReportStatus status = ReportStatus.UNVERIFIED;
 
@@ -58,7 +61,7 @@ public class Report {
     @Column(name = "admin_note", columnDefinition = "TEXT")
     private String adminNote;
 
-    @org.hibernate.annotations.CreationTimestamp
+    @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
